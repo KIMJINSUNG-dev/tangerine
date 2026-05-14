@@ -1,6 +1,9 @@
 package com.tangerine.tangerine.domain.user;
 
+import com.tangerine.tangerine.domain.user.dto.LoginRequest;
+import com.tangerine.tangerine.domain.user.dto.LoginResponse;
 import com.tangerine.tangerine.domain.user.dto.SignupRequest;
+import com.tangerine.tangerine.global.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +17,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
     public void signup(SignupRequest request) {
@@ -37,5 +42,41 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+    }
+
+    @Transactional
+    public LoginResponse login(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
+
+        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        String accessToken = jwtProvider.generateAccessToken(
+                user.getEmail(),
+                user.getRole().name()
+        );
+
+        String refreshToken = jwtProvider.generateRefreshToken(user.getEmail());
+
+        LocalDateTime refreshExpiration = LocalDateTime.now()
+                .plusSeconds(604800);
+
+        refreshTokenRepository.findByEmail(user.getEmail())
+                .ifPresentOrElse(
+                        existing -> existing.updateToken(refreshToken, refreshExpiration),
+                        () -> refreshTokenRepository.save(
+                                RefreshToken.builder()
+                                        .email(user.getEmail())
+                                        .token(refreshToken)
+                                        .expiresAt(refreshExpiration)
+                                        .build()
+                        )
+                );
+
+        return new LoginResponse(accessToken, refreshToken, user.getNickname(), user.getRole().name());
     }
 }
