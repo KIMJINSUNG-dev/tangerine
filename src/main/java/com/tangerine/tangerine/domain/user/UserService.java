@@ -79,4 +79,10 @@ public class UserService {
 
         return new LoginResponse(accessToken, refreshToken, user.getNickname(), user.getRole().name());
     }
+
+    @Transactional
+    public void logout(String email) {
+
+        refreshTokenRepository.deleteByEmail(email);
+    }
 }
