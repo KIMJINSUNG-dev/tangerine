@@ -85,4 +85,28 @@ public class UserService {
 
         refreshTokenRepository.deleteByEmail(email);
     }
+
+    @Transactional
+    public String reissueAccessToken(String refreshToken) {
+
+        if (!jwtProvider.validateToken(refreshToken)) {
+
+            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+        }
+
+        String email = jwtProvider.getEmailFromToken(refreshToken);
+
+        RefreshToken storedToken = refreshTokenRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Refresh Token이 존재하지 않습니다."));
+
+        if (!storedToken.getToken().equals(refreshToken)) {
+
+            throw new IllegalArgumentException("Refresh Token이 일치하지 않습니다.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        return jwtProvider.generateAccessToken(email, user.getRole().name());
+    }
 }

@@ -4,6 +4,7 @@ import com.tangerine.tangerine.domain.user.dto.LoginRequest;
 import com.tangerine.tangerine.domain.user.dto.LoginResponse;
 import com.tangerine.tangerine.domain.user.dto.SignupRequest;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/users")
@@ -57,5 +60,34 @@ public class UserController {
         response.addCookie(refreshTokenCookie);
 
         return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<String> reissue(HttpServletRequest request) {
+
+        String refreshToken = null;
+
+        if (request.getCookies() != null) {
+
+            refreshToken = Arrays.stream(request.getCookies())
+                    .filter(cookie -> "refreshToken".equals(cookie.getName()))
+                    .map(cookie -> cookie.getValue())
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (refreshToken == null) {
+
+            return ResponseEntity.status(401).body("Refresh Token이 없습니다.");
+        }
+
+        try {
+
+            String newAccessToken = userService.reissueAccessToken(refreshToken);
+            return ResponseEntity.ok(newAccessToken);
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
     }
 }
