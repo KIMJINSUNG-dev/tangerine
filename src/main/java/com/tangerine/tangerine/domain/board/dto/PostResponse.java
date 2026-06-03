@@ -38,6 +38,8 @@ public class PostResponse {
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
         this.viewCount = post.getViewCount();
-        this.commentCount = post.getComments().size();
+        this.commentCount = (int) post.getComments().stream()
+                .filter(comment -> !comment.isDeleted())
+                .count();
     }
 }
