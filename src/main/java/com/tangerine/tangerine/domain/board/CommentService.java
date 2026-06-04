@@ -56,7 +56,13 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
 
-        if (!comment.getAuthor().getEmail().equals(email)) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        boolean isAdmin = user.getRole() == User.Role.ADMIN
+                || user.getRole() == User.Role.MANAGER;
+
+        if (!isAdmin && !comment.getAuthor().getEmail().equals(email)) {
 
             throw new IllegalArgumentException("수정 권한이 없습니다.");
         }
@@ -71,7 +77,13 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 댓글입니다."));
 
-        if (!comment.getAuthor().getEmail().equals(email)) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        boolean isAdmin = user.getRole() == User.Role.ADMIN
+                || user.getRole() == User.Role.MANAGER;
+
+        if (!isAdmin && !comment.getAuthor().getEmail().equals(email)) {
 
             throw new IllegalArgumentException("삭제 권한이 없습니다.");
         }

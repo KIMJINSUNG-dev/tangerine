@@ -91,7 +91,13 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        if (!post.getAuthor().getEmail().equals(email)) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        boolean isAdmin = user.getRole() == User.Role.ADMIN
+                || user.getRole() == User.Role.MANAGER;
+
+        if (!isAdmin && !post.getAuthor().getEmail().equals(email)) {
 
             throw new IllegalArgumentException("수정 권한이 없습니다.");
         }
@@ -106,7 +112,13 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
 
-        if (!post.getAuthor().getEmail().equals(email)) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+        boolean isAdmin = user.getRole() == User.Role.ADMIN
+                || user.getRole() == User.Role.MANAGER;
+
+        if (!isAdmin && !post.getAuthor().getEmail().equals(email)) {
 
             throw new IllegalArgumentException("삭제 권한이 없습니다.");
         }

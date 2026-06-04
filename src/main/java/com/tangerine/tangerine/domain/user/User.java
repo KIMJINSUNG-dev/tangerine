@@ -42,4 +42,9 @@ public class User {
 
         USER, TRUSTED, MANAGER, ADMIN
     }
+
+    public void changeRole(User.Role role) {
+
+        this.role = role;
+    }
 }
