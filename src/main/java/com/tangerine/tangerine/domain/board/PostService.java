@@ -29,6 +29,16 @@ public class PostService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
+        if (request.getBoardType().equals("NOTICE")) {
+
+            boolean isAdmin = user.getRole() == User.Role.ADMIN
+                    || user.getRole() == User.Role.MANAGER;
+            if (!isAdmin) {
+
+                throw new IllegalArgumentException("공지사항 작성 권한이 없습니다.");
+            }
+        }
+
         Document taggedDocument = null;
         if (request.getTaggedDocumentId() != null) {
 
