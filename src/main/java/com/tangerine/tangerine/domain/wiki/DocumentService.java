@@ -172,4 +172,16 @@ public class DocumentService {
 
         document.delete();
     }
+
+    @Transactional(readOnly = true)
+    public Page<DocumentResponse> searchDocuments(String keyword, Pageable pageable) {
+
+        return documentRepository
+                .findByTitleContainingIgnoreCaseAndDeletedFalse(keyword, pageable)
+                .map(doc -> {
+
+                    List<DocumentField> fields = documentFieldRepository.findByDocumentId(doc.getId());
+                    return new DocumentResponse(doc, fields);
+                });
+    }
 }

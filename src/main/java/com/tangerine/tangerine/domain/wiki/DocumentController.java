@@ -62,4 +62,13 @@ public class DocumentController {
         documentService.deleteDocument(id, email);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<DocumentResponse>> searchDocuments(
+            @RequestParam String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+
+        Page<DocumentResponse> response = documentService.searchDocuments(keyword, pageable);
+        return ResponseEntity.ok(response);
+    }
 }
