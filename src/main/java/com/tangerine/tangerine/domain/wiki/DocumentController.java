@@ -2,6 +2,7 @@ package com.tangerine.tangerine.domain.wiki;
 
 import com.tangerine.tangerine.domain.wiki.dto.DocumentCreateRequest;
 import com.tangerine.tangerine.domain.wiki.dto.DocumentResponse;
+import com.tangerine.tangerine.domain.wiki.dto.DocumentTemplateResponse;
 import com.tangerine.tangerine.domain.wiki.dto.DocumentUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,12 +13,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final DocumentTemplateService documentTemplateService;
 
     @PostMapping
     public ResponseEntity<DocumentResponse> createDocument(
@@ -70,5 +74,16 @@ public class DocumentController {
 
         Page<DocumentResponse> response = documentService.searchDocuments(keyword, pageable);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * [추가] 누구나 호출 가능 (GET이라 SecurityConfig의
+     * .requestMatchers(HttpMethod.GET, "/api/documents/**").permitAll()
+     * 규칙에 이미 포함돼요. 별도 설정 불필요)
+     */
+    @GetMapping("/type/{typeId}/template")
+    public ResponseEntity<List<DocumentTemplateResponse>> getTemplate(@PathVariable Long typeId) {
+
+        return ResponseEntity.ok(documentTemplateService.getTemplatesByType(typeId));
     }
 }

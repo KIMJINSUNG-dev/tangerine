@@ -51,6 +51,11 @@ public class UserController {
             @AuthenticationPrincipal String email,
             HttpServletResponse response) {
 
+        /**
+         * [설명] Pebble의 logout()은 쿠키만 지웠어요. (DB에 아무것도 안 저장했으니까요)
+         * Tangerine은 DB에 저장해둔 Refresh Token까지 같이 지워야
+         * "로그아웃했는데 옛 Refresh Token으로 재발급이 되는" 구멍을 막을 수 있어요.
+         */
         userService.logout(email);
 
         Cookie refreshTokenCookie = new Cookie("refreshToken", null);

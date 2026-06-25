@@ -29,6 +29,14 @@ public class PostService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
+        /**
+         * [설명] Pebble의 createPost()에는 이런 분기가 없었어요.
+         * (게시판이 하나뿐이라 "어떤 게시판인지에 따른 제약"이 없었으니까요)
+         * 여기서는 NOTICE 게시판일 때만 등급을 추가로 확인해요.
+         * "로그인했는지"는 SecurityConfig가 이미 걸러줬지만,
+         * "그 중에서도 특정 등급만"은 Controller/Security 설정만으로는
+         * 표현하기 까다로워서 Service 레벨에서 직접 체크해요.
+         */
         if (request.getBoardType().equals("NOTICE")) {
 
             boolean isAdmin = user.getRole() == User.Role.ADMIN
@@ -104,6 +112,17 @@ public class PostService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
 
+        /**
+         * [설명] Pebble의 updatePost()는
+         *   post.getAuthor().getEmail().equals(email) 이거 하나만 체크했어요.
+         *   ("작성자 본인인가?" 만 확인)
+         *
+         * Tangerine은 여기에 OR로 관리자 조건을 추가했어요.
+         *   "작성자 본인이 아니어도, 관리자/매니저면 통과시켜라"
+         * 이게 권한 체계(4단계 Role)가 실제로 코드에 반영되는 지점이에요.
+         * Role enum을 4단계로 늘려놓기만 했지 여기서 활용을 안 했다면
+         * 그 등급 구분이 아무 의미가 없었을 거예요.
+         */
         boolean isAdmin = user.getRole() == User.Role.ADMIN
                 || user.getRole() == User.Role.MANAGER;
 

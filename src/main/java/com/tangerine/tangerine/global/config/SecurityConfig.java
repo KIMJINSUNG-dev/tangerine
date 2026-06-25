@@ -4,6 +4,7 @@ import com.tangerine.tangerine.global.security.JwtAuthenticationFilter;
 import com.tangerine.tangerine.global.security.JwtProvider;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -37,7 +39,18 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증이 필요합니다.");
+                            // [수정] sendError 대신 직접 응답을 작성해서 그 자리에서 끝내요.
+                            // sendError()는 컨테이너가 /error로 다시 forward하게 만들어서
+                            // Security 필터를 한 번 더 거치게 되는 부작용이 있었어요.
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("text/plain;charset=UTF-8");
+                            response.getWriter().write("인증이 필요합니다.");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            // [수정] 동일하게 sendError 제거
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("text/plain;charset=UTF-8");
+                            response.getWriter().write("권한이 없습니다.");
                         })
                 )
                 .csrf(csrf -> csrf.disable())
