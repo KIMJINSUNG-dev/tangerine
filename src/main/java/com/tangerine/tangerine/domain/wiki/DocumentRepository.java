@@ -12,4 +12,5 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     Page<Document> findByDocumentTypeIdAndDeletedFalse(Long id, Pageable pageable);
     Page<Document> findByTitleContainingAndDeletedFalse(String keyword, Pageable pageable);
     Page<Document> findByTitleContainingIgnoreCaseAndDeletedFalse(String keyword, Pageable pageable);
+    Page<Document> findByDocumentTypeIdAndTitleContainingIgnoreCaseAndDeletedFalse(Long typeId, String keyword, Pageable pageable);
 }

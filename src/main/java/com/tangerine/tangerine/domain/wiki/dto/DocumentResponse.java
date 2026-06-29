@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class DocumentResponse {
 
     private Long id;
+    private Long typeId;
     private String typeName;
     private String title;
     private String createdBy;
@@ -23,6 +24,7 @@ public class DocumentResponse {
     public DocumentResponse(Document document, List<DocumentField> fieldList) {
 
         this.id = document.getId();
+        this.typeId = document.getDocumentType().getId();
         this.typeName = document.getDocumentType().getName();
         this.title = document.getTitle();
         this.createdBy = document.getCreatedBy() != null

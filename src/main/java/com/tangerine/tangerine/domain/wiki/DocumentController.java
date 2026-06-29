@@ -42,9 +42,10 @@ public class DocumentController {
     @GetMapping("/type/{typeId}")
     public ResponseEntity<Page<DocumentResponse>> getDocumentByType(
             @PathVariable Long typeId,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        Page<DocumentResponse> response = documentService.getDocumentsByType(typeId, pageable);
+        Page<DocumentResponse> response = documentService.getDocumentsByType(typeId, keyword, pageable);
         return ResponseEntity.ok(response);
     }
 

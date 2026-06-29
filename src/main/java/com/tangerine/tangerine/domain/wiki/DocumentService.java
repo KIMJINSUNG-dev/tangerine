@@ -107,7 +107,18 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DocumentResponse> getDocumentsByType(Long typeId, Pageable pageable) {
+    public Page<DocumentResponse> getDocumentsByType(Long typeId, String keyword, Pageable pageable) {
+
+        if (keyword != null && !keyword.isBlank()) {
+
+            return documentRepository
+                    .findByDocumentTypeIdAndTitleContainingIgnoreCaseAndDeletedFalse(typeId, keyword, pageable)
+                    .map(doc -> {
+
+                        List<DocumentField> fields = documentFieldRepository.findByDocumentId(doc.getId());
+                        return new DocumentResponse(doc, fields);
+                    });
+        }
 
         return documentRepository
                 .findByDocumentTypeIdAndDeletedFalse(typeId, pageable)

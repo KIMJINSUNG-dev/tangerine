@@ -7,7 +7,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "document_templates")
+@Table(
+        name = "document_templates",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"type_id", "field_key"})
+)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
