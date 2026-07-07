@@ -11,4 +11,10 @@ public class DocumentUpdateRequest {
 
     private String title;
     private Map<String, String> fields;
+
+    public DocumentUpdateRequest(String title, Map<String, String> fields) {
+
+        this.title = title;
+        this.fields = fields;
+    }
 }

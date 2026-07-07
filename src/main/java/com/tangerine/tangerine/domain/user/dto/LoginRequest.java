@@ -1,5 +1,6 @@
 package com.tangerine.tangerine.domain.user.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -9,4 +10,10 @@ public class LoginRequest {
 
     private String email;
     private String password;
+
+    public LoginRequest(String email, String password) {
+
+        this.email = email;
+        this.password = password;
+    }
 }
