@@ -4,6 +4,7 @@ import com.tangerine.tangerine.domain.user.dto.LoginRequest;
 import com.tangerine.tangerine.domain.user.dto.LoginResponse;
 import com.tangerine.tangerine.domain.user.dto.SignupRequest;
 import com.tangerine.tangerine.global.security.JwtProvider;
+import com.tangerine.tangerine.global.security.RateLimitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
+    private final RateLimitService rateLimitService;
 
     @Transactional
     public void signup(SignupRequest request) {
@@ -47,13 +49,27 @@ public class UserService {
     @Transactional
     public LoginResponse login(LoginRequest request) {
 
+        /**
+         * [추가] Rate Limiting 체크
+         * 로그인 시도 전에 먼저 차단 여부를 확인해요.
+         * 이미 5번 실패한 상태면 비밀번호가 맞아도 거부해요.
+         */
+        if (rateLimitService.isBlocked(request.getEmail())) {
+
+            throw new IllegalArgumentException("로그인 시도가 너무 많습니다. 5분 후에 다시 시도해주세요.");
+        }
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
 
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
 
+            // [추가] 비밀번호 불일치 시 실패 카운터 증가
+            rateLimitService.recordFailure(request.getEmail());
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
+
+        // [추가] 로그인 성공 시 실패 카운터 초기화
+        rateLimitService.clearFailures(request.getEmail());
 
         String accessToken = jwtProvider.generateAccessToken(
                 user.getEmail(),
