@@ -38,7 +38,7 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private RefreshTokenRepository refreshTokenRepository;
+    private RefreshTokenService refreshTokenService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -144,14 +144,8 @@ class UserServiceTest {
         given(jwtProvider.generateRefreshToken(anyString()))
                 .willReturn("fake-refresh-token");
 
-        /**
-         * RefreshToken 저장 로직 Mock 설정
-         * Tangerine의 login()은 RefreshToken을 DB에 저장해요.
-         * refreshTokenRepository.findByEmail()이 빈 Optional을 반환하면
-         * "첫 로그인"으로 판단해서 새로 save()를 호출해요.
-         */
-        given(refreshTokenRepository.findByEmail(anyString()))
-                .willReturn(Optional.empty());
+        // refreshTokenService.save()는 void 반환이라 별도 설정 없이
+        // Mockito가 자동으로 아무것도 안 하는 것처럼 처리해줘요.
 
         // when
         LoginResponse response = userService.login(loginRequest);
@@ -165,7 +159,7 @@ class UserServiceTest {
         assertThat(response.getRole()).isEqualTo("USER");
 
         // RefreshToken이 저장됐는지도 검증해요
-        verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
+        verify(refreshTokenService, times(1)).save(anyString(), anyString());
     }
 
     @Test
@@ -202,17 +196,10 @@ class UserServiceTest {
     @DisplayName("Access Token 재발급 성공")
     void reissueAccessToken_success() {
 
-        // given: 유효한 RefreshToken 상황 설정
-        RefreshToken storedToken = RefreshToken.builder()
-                .email("test@test.com")
-                .token("valid-refresh-token")
-                .expiresAt(LocalDateTime.now().plusDays(7))
-                .build();
-
         given(jwtProvider.validateToken("valid-refresh-token")).willReturn(true);
         given(jwtProvider.getEmailFromToken("valid-refresh-token")).willReturn("test@test.com");
-        given(refreshTokenRepository.findByEmail("test@test.com"))
-                .willReturn(Optional.of(storedToken));
+        given(refreshTokenService.find("test@test.com"))
+                .willReturn("valid-refresh-token");
         given(userRepository.findByEmail("test@test.com"))
                 .willReturn(Optional.of(mockUser));
         given(jwtProvider.generateAccessToken(anyString(), anyString()))
@@ -240,17 +227,10 @@ class UserServiceTest {
     @DisplayName("Access Token 재발급 실패 - DB의 토큰과 불일치")
     void reissueAccessToken_fail_token_mismatch() {
 
-        // DB에는 다른 토큰이 저장되어 있는 상황
-        RefreshToken storedToken = RefreshToken.builder()
-                .email("test@test.com")
-                .token("different-token-in-db")
-                .expiresAt(LocalDateTime.now().plusDays(7))
-                .build();
-
         given(jwtProvider.validateToken("some-token")).willReturn(true);
         given(jwtProvider.getEmailFromToken("some-token")).willReturn("test@test.com");
-        given(refreshTokenRepository.findByEmail("test@test.com"))
-                .willReturn(Optional.of(storedToken));
+        given(refreshTokenService.find("test@test.com"))
+                .willReturn("different-token-in-redis");
 
         // "some-token"과 DB의 "different-token-in-db"가 다르니까 예외 발생
         assertThatThrownBy(() -> userService.reissueAccessToken("some-token"))

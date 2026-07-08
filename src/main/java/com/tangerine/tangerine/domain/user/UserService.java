@@ -18,7 +18,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public void signup(SignupRequest request) {
@@ -62,42 +62,10 @@ public class UserService {
 
         String refreshToken = jwtProvider.generateRefreshToken(user.getEmail());
 
-        /**
-         * [설명] 여기부터가 Pebble의 login()에는 없던 부분이에요.
-         *
-         * Pebble: Refresh Token을 만들어서 응답에만 담아 보내고 끝.
-         *         서버는 이 토큰을 다시는 기억하지 않아요.
-         *
-         * Tangerine: 만든 Refresh Token을 DB(refresh_tokens 테이블)에
-         *            반드시 저장해요. 이게 있어야 나중에
-         *            reissueAccessToken()에서 "이 Refresh Token이
-         *            진짜로 우리가 발급한 유효한 토큰인지" 대조할 수 있고,
-         *            관리자가 강제로 삭제해서 차단할 수도 있어요.
-         */
-        LocalDateTime refreshExpiration = LocalDateTime.now()
-                .plusSeconds(604800);
-
-        refreshTokenRepository.findByEmail(user.getEmail())
-                .ifPresentOrElse(
-                        // 이미 Refresh Token이 있으면 (재로그인) → 값만 갱신
-                        existing -> existing.updateToken(refreshToken, refreshExpiration),
-                        // 없으면 (첫 로그인) → 새로 저장
-                        () -> refreshTokenRepository.save(
-                                RefreshToken.builder()
-                                        .email(user.getEmail())
-                                        .token(refreshToken)
-                                        .expiresAt(refreshExpiration)
-                                        .build()
-                        )
-                );
+        // Redis 저장
+        refreshTokenService.save(user.getEmail(), refreshToken);
 
         return new LoginResponse(accessToken, refreshToken, user.getNickname(), user.getRole().name());
-    }
-
-    @Transactional
-    public void logout(String email) {
-
-        refreshTokenRepository.deleteByEmail(email);
     }
 
     /**
@@ -123,10 +91,14 @@ public class UserService {
          *     누군가 예전에 탈취해둔 Refresh Token으로 재발급을 시도하면
          *     → DB에 없으니 (또는 값이 다르니) 거부됨
          */
-        RefreshToken storedToken = refreshTokenRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Refresh Token이 존재하지 않습니다."));
+        String storedToken = refreshTokenService.find(email);
 
-        if (!storedToken.getToken().equals(refreshToken)) {
+        if (storedToken == null) {
+
+            throw new IllegalArgumentException("Refresh Token이 존재하지 않습니다.");
+        }
+
+        if (!storedToken.equals(refreshToken)) {
 
             throw new IllegalArgumentException("Refresh Token이 일치하지 않습니다.");
         }
@@ -136,5 +108,11 @@ public class UserService {
 
         // 3단계: 검증을 통과했으니 새 Access Token만 발급 (Refresh Token은 그대로 유지)
         return jwtProvider.generateAccessToken(email, user.getRole().name());
+    }
+
+    @Transactional
+    public void logout(String email) {
+
+        refreshTokenService.delete(email);
     }
 }
