@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -34,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/reissue").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/documents/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+                        .requestMatchers("/api/document-types", "/api/document-types/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAnyRole("MANAGER", "ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -70,7 +73,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://dzhda13pro9ex.cloudfront.net"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -78,5 +84,17 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public UserDetailsService userDetailService() {
+
+        // [추가] JWT 방식으로 인증을 처리하기 때문에
+        // Spring Security의 기본 UserDetailsService는 사용하지 않아요.
+        // 빈을 직접 등록해서 자동 생성 경고를 없애요.
+        return username -> {
+
+            throw new UsernameNotFoundException("JWT 인증을 사용합니다.");
+        };
     }
 }
