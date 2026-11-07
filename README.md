@@ -12,12 +12,14 @@ JWT 인증, Redis, TypeScript, AWS 클라우드 배포 등을
 
 ---
 
-## 배포 URL
+## 시연 영상
 
-| 구분 | URL |
-|------|-----|
-| 서비스 | https://dzhda13pro9ex.cloudfront.net |
-| API 서버 | https://d2vmrs7ksqotm2.cloudfront.net |
+[![Tangerine 시연 영상](https://img.youtube.com/vi/ptdSzMcWCds/0.jpg)](https://youtu.be/ptdSzMcWCds)
+
+관리자 필드 추가 → 문서 작성 화면에 즉시 반영 → 문서 · 게시글 작성 (약 2분)
+
+> AWS(EC2 · RDS · S3 · CloudFront)로 배포해 2026.07 ~ 2026.10 운영했으며,
+> 무료 플랜 종료로 현재는 서비스를 내린 상태입니다. 영상은 로컬 환경에서 녹화했습니다.
 
 ---
 
